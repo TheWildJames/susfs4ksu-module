@@ -1,5 +1,8 @@
 name: Build and Release
 
+permissions:
+  contents: write
+
 on:
   push:
   workflow_dispatch:
@@ -32,7 +35,6 @@ jobs:
       - name: Checkout v1.5.2+ branch
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           ref: v1.5.2+
 
       - name: Remove old contents from webroot folder
@@ -44,10 +46,13 @@ jobs:
           cp -r ../dist-temp/* webroot/
 
       - name: Commit & Push changes
-        uses: actions-js/push@master
-        with:
-          github_token: ${{ secrets.SUSFS4KSU_SECRET }}
-          author_email: "24408329+sidex15@users.noreply.github.com"
-          author_name: "sidex15"
-          message: "WebUI: ${{ steps.commit_message.outputs.message }}"
-          branch: 'v1.5.2+'
+        run: |
+          git config user.name "sidex15"
+          git config user.email "24408329+sidex15@users.noreply.github.com"
+          if git diff --quiet -- webroot; then
+            echo "webroot is already in sync with the webui branch, nothing to push"
+            exit 0
+          fi
+          git add webroot
+          git commit -m "WebUI: ${{ steps.commit_message.outputs.message }}"
+          git push origin HEAD:v1.5.2+
