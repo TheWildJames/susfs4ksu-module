@@ -6,6 +6,7 @@ on:
 jobs:
   synchronize-with-crowdin:
     runs-on: ubuntu-latest
+    if: github.repository == 'sidex15/susfs4ksu-module'
 
     steps:
       - name: Checkout
