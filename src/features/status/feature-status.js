@@ -1,10 +1,12 @@
-import { versionAtLeast } from '../../utils.js';
+import { versionAtLeast, haveSusfsCommand } from '../../utils.js';
 
 // Load kernel feature status
 export async function loadKernelFeatureStatus(susfs_features, susfs_versions) {
   const features = [
     { id: 'status_sus_path', config: 'CONFIG_KSU_SUSFS_SUS_PATH' },
 	{ id: 'status_sus_map', config: 'CONFIG_KSU_SUSFS_SUS_MAP' },
+    { id: 'status_sus_path_uid_filter', config: null },
+    { id: 'status_priority_uid_filter', config: 'CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER' },
     { id: 'status_sus_mount', config: 'CONFIG_KSU_SUSFS_SUS_MOUNT' },
     { id: 'status_auto_default_mount', config: 'CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT' },
     { id: 'status_auto_bind_mount', config: 'CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT' },
@@ -63,5 +65,20 @@ export async function loadKernelFeatureStatus(susfs_features, susfs_versions) {
         span.textContent = window.i18n ? window.i18n.getTranslation('unknown_label') : 'Unknown';
       }
     }
+  }
+
+  // sus_path_uid_filter has no CONFIG_* string in `show enabled_features`
+  // (it lives under CONFIG_KSU_SUSFS_SUS_PATH) and no released susfs version
+  // distinguishes it, so ask the installed userspace binary instead.
+  const susPathUidFilterRow = document.getElementById('status_sus_path_uid_filter');
+  if (susPathUidFilterRow) {
+    const supported = await haveSusfsCommand('set_sus_path_uid_filter');
+    const span = susPathUidFilterRow.querySelector('span');
+    const label = supported ? 'enabled_label' : 'disabled_label';
+    susPathUidFilterRow.className = supported
+      ? 'badge badge-sm badge-success text-sm ml-4'
+      : 'badge badge-sm badge-error text-sm ml-4';
+    span.setAttribute('data-i18n', label);
+    span.textContent = window.i18n ? window.i18n.getTranslation(label) : (supported ? 'Enabled' : 'Disabled');
   }
 }

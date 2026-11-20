@@ -1,10 +1,21 @@
 import { toast } from 'kernelsu';
 import { gsap } from 'gsap';
-import { run, versionAtLeast } from '../../utils.js';
-import { config } from '../../core/constants.js';
+import { run, versionAtLeast, haveSusfsCommand } from '../../utils.js';
+import { config, susfs_bin } from '../../core/constants.js';
 
-// Unified custom text editor (sus_path, sus_path_loop, sus_maps, sus_mount, try_umount, open_redirect)
-export function getCustomEditorFeatures(susfs_features, susfs_versions) {
+// Collapse a per-line (or comma separated) app list into the single comma
+// separated argument the *_uid_filter subcommands expect.
+function joinAppList(value) {
+	return value
+		.split(/[\n,]/)
+		.map((entry) => entry.trim())
+		.filter((entry) => entry && !entry.startsWith('#'))
+		.join(',');
+}
+
+// Unified custom text editor (sus_path, sus_path_loop, sus_maps, sus_mount,
+// try_umount, open_redirect, priority_uid_filter, sus_path_uid_filter)
+export function getCustomEditorFeatures(susfs_features, susfs_versions, probe = {}) {
 	const features = [];
 
 	if (susfs_features.includes("CONFIG_KSU_SUSFS_SUS_PATH")) {
@@ -67,12 +78,41 @@ export function getCustomEditorFeatures(susfs_features, susfs_versions) {
 		});
 	}
 
+	// App uids hidden from getpriority/setpriority/ioprio probing (susfs v2.4.0+)
+	if (susfs_features.includes("CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER")) {
+		features.push({
+			value: "PRIORITY_UID_FILTER",
+			valueKey: "priority_uid_filter_label",
+			labelKey: "custom_priority_uid_filter_label",
+			filePath: `${config}/priority_uid_filter.txt`,
+			featureName: "PRIORITY_UID_FILTER",
+			applyCmd: (value) => `${susfs_bin} set_priority_uid_filter '${joinAppList(value)}'`,
+		});
+	}
+
+	// Apps still allowed to see the sus paths (kernel tree after v2.4.0, so the
+	// feature has no CONFIG_* string and is probed on the binary instead)
+	if (probe.susPathUidFilter) {
+		features.push({
+			value: "SUS_PATH_UID_FILTER",
+			valueKey: "sus_path_uid_filter_label",
+			labelKey: "custom_sus_path_uid_filter_label",
+			filePath: `${config}/sus_path_uid_filter.txt`,
+			featureName: "SUS_PATH_UID_FILTER",
+			applyCmd: (value) => `${susfs_bin} set_sus_path_uid_filter '${joinAppList(value)}'`,
+		});
+	}
+
 	return features;
 }
 
 export async function custom_feature_editor(susfs_features, susfs_versions) {
 	const section = document.getElementById("custom_feature_editor_section");
 	if (!section) return;
+
+	// sus_path_uid_filter ships no CONFIG_* string in `show enabled_features`,
+	// so ask the binary whether it knows the subcommand.
+	const probe = { susPathUidFilter: await haveSusfsCommand("set_sus_path_uid_filter") };
 
 	const featureSelect = document.getElementById("custom_feature_select");
 	const featureLabel = document.getElementById("custom_feature_label");
@@ -82,7 +122,7 @@ export async function custom_feature_editor(susfs_features, susfs_versions) {
 	const textarea = document.getElementById("custom_feature_textarea");
 	const mainContainer = document.querySelector('main');
 
-	const availableFeatures = getCustomEditorFeatures(susfs_features, susfs_versions);
+	const availableFeatures = getCustomEditorFeatures(susfs_features, susfs_versions, probe);
 	if (availableFeatures.length === 0) {
 		section.classList.add("hidden");
 		return;
@@ -119,6 +159,19 @@ export async function custom_feature_editor(susfs_features, susfs_versions) {
 				return;
 			}
 			await run(`echo '${value}' > ${selected.filePath}`);
+			if (selected.applyCmd) {
+				if (!joinAppList(value)) {
+					toast(`${selected.featureName} cleared, reboot to apply`);
+					return;
+				}
+				try {
+					await run(selected.applyCmd(value));
+					toast(`${selected.featureName} saved and applied!`);
+				} catch (error) {
+					toast(`Saved, apply failed: ${error}`);
+				}
+				return;
+			}
 			toast(`Custom ${selected.featureName} saved!`);
 			toast("Reboot to take effect");
 		};

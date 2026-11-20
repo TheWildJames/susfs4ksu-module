@@ -1,4 +1,5 @@
 import { toast } from 'kernelsu';
+import { susfs_bin } from './core/constants.js';
 
 /**
  * Execute a shell command via KernelSU
@@ -24,6 +25,24 @@ export async function run(command) {
             reject(error);
         }
     });
+}
+
+/**
+ * Check whether the installed ksu_susfs binary supports a subcommand.
+ * Needed for features that expose no CONFIG_KSU_SUSFS_* string through
+ * `show enabled_features` and have no distinct susfs version yet.
+ * @param {string} cmd - Subcommand name, e.g. "set_sus_path_uid_filter"
+ * @returns {Promise<boolean>}
+ */
+export async function haveSusfsCommand(cmd) {
+    if (!cmd) return false;
+    try {
+        const help = await run(`${susfs_bin} --help 2>&1 || true`);
+        return new RegExp(`^[ \\t]*${cmd}([ \\t]|$)`, 'm').test(help || '');
+    } catch (error) {
+        console.error(`Error probing susfs command ${cmd}:`, error);
+        return false;
+    }
 }
 
 /**
