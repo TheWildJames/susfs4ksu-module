@@ -1,4 +1,5 @@
 import { run, versionAtLeast, setupBooleanToggle } from '../../utils.js';
+import { custom_feature_editor } from './feature-editor.js';
 import { config, susfs_bin, moddir } from '../../core/constants.js';
 
 // Custom toggles
@@ -93,6 +94,9 @@ export async function custom_toggles(settings, susfs_versions, susfs_features = 
 			const apply_uid_filters = async () => {
 				try {
 					await run(`sh ${moddir}/apply_uid_filters.sh`);
+					// the manual list is exclusive with this toggle, so re-render
+					// the editor to grey the entry out or bring it back
+					await custom_feature_editor(susfs_features, susfs_versions, custom_settings);
 				} catch (error) {
 					console.error("Applying the uid filters failed:", error);
 				}

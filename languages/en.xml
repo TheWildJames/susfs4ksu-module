@@ -34,7 +34,7 @@
   <string id="kernel_version_label">Kernel Version</string>
   <string id="sus_path_label">SUS PATH</string>
   <string id="sus_path_uid_filter_label">SUS_PATH_UID_FILTER</string>
-  <string id="priority_uid_filter_label">PRIORITY_UID_FILTER</string>
+  <string id="priority_uid_filter_label">PRIORITY_UID_FILTER (MANUAL)</string>
   <string id="sus_map_label">SUS MAPS</string>
   <string id="sus_mount_label">SUS MOUNT</string>
   <string id="try_umount_label">TRY UMOUNT</string>
@@ -106,7 +106,7 @@
   <string id="force_hide_dex2oat_label">Force Hide Dex2oat Mounts</string>
   <string id="avc_log_spoofing_label">AVC Log Spoofing</string>
   <string id="emulate_vold_app_data_label">Emulate Vold App Data Isolation</string>
-  <string id="priority_uid_filter_all_apps_label">Hide All App UIDs</string>
+  <string id="priority_uid_filter_all_apps_label">Hide All App UIDs (replaces the manual list)</string>
   <string id="custom_sus_path_label">Custom SUS Path</string>
   <string id="custom_sus_path_loop_label">Custom SUS Path Loop</string>
   <string id="custom_sus_maps_label">Custom SUS Maps</string>
@@ -114,7 +114,8 @@
   <string id="custom_try_umount_label">Custom Try Umount</string>
   <string id="custom_sus_open_redirect_label">Custom Open Redirect</string>
   <string id="custom_sus_path_uid_filter_label">Custom SUS Path UID Filter</string>
-  <string id="custom_priority_uid_filter_label">Custom Priority UID Filter</string>
+  <string id="custom_priority_uid_filter_label">Manual Priority UID Filter (per app)</string>
+  <string id="priority_uid_filter_ignored_note">Ignored while "Hide All App UIDs" is enabled</string>
 
   <!-- Credits -->
   <string id="contrib_label">Contributors:</string>

@@ -1,7 +1,7 @@
 import { toast } from 'kernelsu';
 import { gsap } from 'gsap';
 import { run, versionAtLeast, haveSusfsCommand } from '../../utils.js';
-import { config, susfs_bin } from '../../core/constants.js';
+import { config, moddir } from '../../core/constants.js';
 
 // Collapse a per-line (or comma separated) app list into the single comma
 // separated argument the *_uid_filter subcommands expect.
@@ -78,7 +78,9 @@ export function getCustomEditorFeatures(susfs_features, susfs_versions, probe = 
 		});
 	}
 
-	// App uids hidden from getpriority/setpriority/ioprio probing (susfs v2.4.0+)
+	// App uids hidden from getpriority/setpriority/ioprio probing (susfs v2.4.0+).
+	// Exclusive with the "Hide All App UIDs" toggle: while that is on, the kernel
+	// gets every installed app and this list is not read at all.
 	if (susfs_features.includes("CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER")) {
 		features.push({
 			value: "PRIORITY_UID_FILTER",
@@ -86,7 +88,9 @@ export function getCustomEditorFeatures(susfs_features, susfs_versions, probe = 
 			labelKey: "custom_priority_uid_filter_label",
 			filePath: `${config}/priority_uid_filter.txt`,
 			featureName: "PRIORITY_UID_FILTER",
-			applyCmd: (value) => `${susfs_bin} set_priority_uid_filter '${joinAppList(value)}'`,
+			disabled: probe.priorityAllApps === true,
+			ignoredNoteKey: "priority_uid_filter_ignored_note",
+			applyCmd: () => `sh ${moddir}/apply_uid_filters.sh`,
 		});
 	}
 
@@ -99,20 +103,23 @@ export function getCustomEditorFeatures(susfs_features, susfs_versions, probe = 
 			labelKey: "custom_sus_path_uid_filter_label",
 			filePath: `${config}/sus_path_uid_filter.txt`,
 			featureName: "SUS_PATH_UID_FILTER",
-			applyCmd: (value) => `${susfs_bin} set_sus_path_uid_filter '${joinAppList(value)}'`,
+			applyCmd: () => `sh ${moddir}/apply_uid_filters.sh`,
 		});
 	}
 
 	return features;
 }
 
-export async function custom_feature_editor(susfs_features, susfs_versions) {
+export async function custom_feature_editor(susfs_features, susfs_versions, settings = {}) {
 	const section = document.getElementById("custom_feature_editor_section");
 	if (!section) return;
 
 	// sus_path_uid_filter ships no CONFIG_* string in `show enabled_features`,
 	// so ask the binary whether it knows the subcommand.
-	const probe = { susPathUidFilter: await haveSusfsCommand("set_sus_path_uid_filter") };
+	const probe = {
+		susPathUidFilter: await haveSusfsCommand("set_sus_path_uid_filter"),
+		priorityAllApps: Number(settings.priority_uid_filter_all_apps) === 1,
+	};
 
 	const featureSelect = document.getElementById("custom_feature_select");
 	const featureLabel = document.getElementById("custom_feature_label");
@@ -129,10 +136,13 @@ export async function custom_feature_editor(susfs_features, susfs_versions) {
 	}
 
 	section.classList.remove("hidden");
+	const disabledSuffix = ` (${window.i18n ? window.i18n.getTranslation("disabled_label") : "Disabled"})`;
 	featureSelect.innerHTML = availableFeatures
 		.map((feature) => {
 			const translatedLabel = window.i18n ? window.i18n.getTranslation(feature.valueKey) : feature.featureName;
-			return `<option value="${feature.value}" data-i18n="${feature.valueKey}">${translatedLabel}</option>`;
+			const suffix = feature.disabled ? disabledSuffix : "";
+			const disabled = feature.disabled ? " disabled" : "";
+			return `<option value="${feature.value}" data-i18n="${feature.valueKey}"${disabled}>${translatedLabel}${suffix}</option>`;
 		})
 		.join("");
 
@@ -141,15 +151,22 @@ export async function custom_feature_editor(susfs_features, susfs_versions) {
 		return availableFeatures.find((feature) => feature.value === selectedValue) || availableFeatures[0];
 	};
 
+	const ignoredNote = (feature) =>
+		window.i18n ? window.i18n.getTranslation(feature.ignoredNoteKey || "disabled_label") : "Ignored while Hide All App UIDs is on";
+
 	const bindSelectedFeature = () => {
 		const selected = getSelectedFeature();
 		featureLabel.setAttribute("data-i18n", selected.labelKey);
 		featureLabel.textContent = window.i18n ? window.i18n.getTranslation(selected.labelKey) : selected.featureName;
+		if (selected.disabled && selected.ignoredNoteKey) {
+			featureLabel.textContent += ` - ${ignoredNote(selected)}`;
+		}
 		textarea.value = "";
 
 		loadBtn.onclick = async () => {
 			const content = await run(`cat ${selected.filePath}`);
 			textarea.value = content;
+			if (selected.disabled && selected.ignoredNoteKey) toast(ignoredNote(selected));
 		};
 
 		saveBtn.onclick = async () => {
@@ -159,6 +176,10 @@ export async function custom_feature_editor(susfs_features, susfs_versions) {
 				return;
 			}
 			await run(`echo '${value}' > ${selected.filePath}`);
+			if (selected.disabled && selected.ignoredNoteKey) {
+				toast(`Saved, but ${ignoredNote(selected)}`);
+				return;
+			}
 			if (selected.applyCmd) {
 				if (!joinAppList(value)) {
 					toast(`${selected.featureName} cleared, reboot to apply`);

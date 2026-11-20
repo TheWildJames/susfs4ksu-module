@@ -124,7 +124,7 @@ H.on('NAVIGATE_END', async ({ to, from, trigger, location }) => {
 	} else if (currentPath === '/custom.html') {
 		custom_toggles(settings, susfs_versions, susfs_features);
 		custom_rom_settings(settings);
-		custom_feature_editor(susfs_features, susfs_versions);
+		custom_feature_editor(susfs_features, susfs_versions, settings);
 		custom_kstat_editor();
 	} else if (currentPath === '/status.html') {
 		loadKernelFeatureStatus(susfs_features, susfs_versions);
