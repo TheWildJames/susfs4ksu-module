@@ -2,12 +2,17 @@ name: Build and Release
 
 on:
   push:
+    branches:
+      - v1.5.2+
     paths-ignore:
       - 'README.md'
       - '*.md'
       - 'docs/**'
       - '.github/ISSUE_TEMPLATE/**'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-and-release:
@@ -18,22 +23,61 @@ jobs:
         with:
           ref: v1.5.2+
 
-      - name: Update version with git HEAD
+      - name: Stamp version, versionCode and updateJson
         run: |
-          RANDOM_STRING=$(git rev-parse --short HEAD | cut -c1-7)
-          echo "BUILD_ID=${RANDOM_STRING}" >> $GITHUB_ENV
-          sed -i "s/version=v1.5.2-R.*/version=v1.5.2-CI-${RANDOM_STRING}/" module.prop
+          SHA=$(git rev-parse --short HEAD)
+          VC=$((105002028 + GITHUB_RUN_NUMBER))
+          echo "BUILD_ID=$SHA" >> $GITHUB_ENV
+          echo "VERSION=v1.5.2-CI-$SHA" >> $GITHUB_ENV
+          echo "VERSION_CODE=$VC" >> $GITHUB_ENV
+          sed -i "s/^version=v1.5.2-R.*/version=v1.5.2-CI-$SHA/" module.prop
+          sed -i "s/^versionCode=.*/versionCode=$VC/" module.prop
+          sed -i "s#^updateJson=.*#updateJson=https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/update.json#" module.prop
+          grep -E '^(version|versionCode|updateJson)=' module.prop
 
-      - name: Upload release artifact
+      - name: Write update.json
+        run: |
+          cat > update.json <<EOF
+          {
+              "version": "${VERSION}",
+              "versionCode": ${VERSION_CODE},
+              "zipUrl": "https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/susfs4ksu-module.zip",
+              "changelog": "https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/v1.5.2+/CHANGELOG.md"
+          }
+          EOF
+          cat update.json
+
+      - name: Package flashable module zip
+        run: |
+          rm -f susfs4ksu-module.zip
+          zip -r -9 susfs4ksu-module.zip . \
+            -x '.git/*' '.github/*' 'node_modules/*' 'src/*' 'tests/*' 'README.md' 'LICENSE'
+          echo "--- zip entry count: $(unzip -l susfs4ksu-module.zip | tail -1)"
+          echo "--- module.prop inside the zip:"
+          unzip -p susfs4ksu-module.zip module.prop
+
+      - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
           name: release-1.5.2+_${{ env.BUILD_ID }}
           path: |
-            ${{ github.workspace }}/**/*
-            !${{ github.workspace }}/.git/**
-            !${{ github.workspace }}/.github/**
-            !${{ github.workspace }}/node_modules/**
-            !${{ github.workspace }}/src/**
-            !${{ github.workspace }}/tests/**
-            !${{ github.workspace }}/README.md
-            !${{ github.workspace }}/LICENSE
+            susfs4ksu-module.zip
+            update.json
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="ci-${GITHUB_RUN_NUMBER}"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" \
+            --title "SUSFS-FOR-KERNELSU ${VERSION} (${BUILD_ID})" \
+            --notes "Automated build of \`${GITHUB_SHA}\` from the \`v1.5.2+\` branch.
+
+          * \`susfs4ksu-module.zip\` - flash in KernelSU Manager
+          * \`update.json\` - attached so \`releases/latest/download/update.json\` keeps the in-app updater current
+
+          Changelog: https://github.com/${GITHUB_REPOSITORY}/blob/v1.5.2+/CHANGELOG.md" \
+            --latest \
+            susfs4ksu-module.zip update.json
+          echo "Release: https://github.com/${GITHUB_REPOSITORY}/releases/tag/$TAG"
