@@ -66,3 +66,20 @@ spoof_uname() {
 	[ -z $kernel_build ] && kernel_build='default'
 	${SUSFS_BIN} set_uname "$kernel_version" "$kernel_build"
 }
+
+## susfs_have_cmd <subcommand>
+## Returns success when the installed ksu_susfs binary knows the subcommand.
+## Used for features that have no CONFIG_KSU_SUSFS_* string in
+## 'show enabled_features' and no distinct susfs version yet.
+susfs_have_cmd() {
+	[ -n "$1" ] || return 1
+	${SUSFS_BIN} --help 2>/dev/null | sed 's/^[[:space:]]*//' | cut -d' ' -f1 | grep -qx "$1"
+}
+
+## susfs_join_app_list <file>
+## Collapses a per-line or comma separated app list into the single comma
+## separated argument the *_uid_filter subcommands expect.
+susfs_join_app_list() {
+	[ -f "$1" ] || return 0
+	grep -v "#" "$1" | tr -d ' 	\r' | grep -v '^$' | tr '\n' ',' | sed 's/,*$//'
+}

@@ -1,3 +1,18 @@
+## Unreleased
+### Features
+* Added `priority_uid_filter` support (susfs v2.4.0+, `CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER`)
+    * App list: `/data/adb/susfs4ksu/priority_uid_filter.txt` (one package per line or comma separated)
+    * Applied at `boot-completed.sh`, uids are hidden from getpriority/setpriority/ioprio probing
+    * WebUI: custom feature editor entry, applies live on save
+* Added `sus_path_uid_filter` support (susfs kernel tree after v2.4.0)
+    * App list: `/data/adb/susfs4ksu/sus_path_uid_filter.txt` (one package per line or comma separated)
+    * Set before the sus_path entries at `boot-completed.sh` so the allowed uids exist
+    * Detected by probing `ksu_susfs --help` (the feature exposes no `CONFIG_*` string), so the binary has to support `set_sus_path_uid_filter`
+    * WebUI: custom feature editor entry, applies live on save
+* WebUI: custom feature editor entries may declare an `applyCmd`; the save action then applies the change immediately instead of only asking for a reboot
+* Bundled `ksu_susfs` rebuilt from `TheWildJames/susfs4ksu-binaries@universal-binary`, which adds `set_sus_path_uid_filter` on top of upstream's `priority_uid_filter`, so both features are usable out of the box
+    * the binary update/check paths (`customize.sh`, `action.sh`, `susfs-bin-check.sh`, `susfs-bin-update.sh`) now pull from that fork instead of `sidex15/susfs4ksu-binaries`
+
 ## v1.5.2+ Revision 28
 ### Notes
 Sorry for the very late update. This update focuses on WebUI configuration import/export, boot-stage script performance and correctness fixes, and better handling of newer susfs (v2.0.0+/v2.1.0+) kernel implementations.

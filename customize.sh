@@ -95,18 +95,18 @@ fi
 
 # Check connectivity first
 ui_print "[-] Checking susfs binary cloud connection"
-base_url="https://raw.githubusercontent.com/sidex15/susfs4ksu-binaries/universal-binary/ksu_susfs_arm64"
+base_url="https://raw.githubusercontent.com/TheWildJames/susfs4ksu-binaries/universal-binary/ksu_susfs_arm64"
 if check "$base_url"; then
 	ui_print "[-] susfs binary cloud connection established"
 	# Check the hash of susfs binaries
 	hash=$(sha256sum ${TMPDIR}/susfs/tools/ksu_susfs_arm64 | awk '{print $1}')
-	cloudhash=$(download https://raw.githubusercontent.com/sidex15/susfs4ksu-binaries/universal-binary/ksu_susfs_arm64 | sha256sum | awk '{print $1}')
+	cloudhash=$(download https://raw.githubusercontent.com/TheWildJames/susfs4ksu-binaries/universal-binary/ksu_susfs_arm64 | sha256sum | awk '{print $1}')
 	if [ $hash = $cloudhash > /dev/null 2>&1 ]; then
 		ui_print "[-] susfs local and cloud binary hash is the same"
 		ui_print "[-] skipping binary cloud update"
 	else
 		ui_print "[-] Downloading latest susfs binary from the internet"
-		download "https://raw.githubusercontent.com/sidex15/susfs4ksu-binaries/universal-binary/ksu_susfs_arm64" > ${MODPATH}/ksu_susfs_remote
+		download "https://raw.githubusercontent.com/TheWildJames/susfs4ksu-binaries/universal-binary/ksu_susfs_arm64" > ${MODPATH}/ksu_susfs_remote
 		# test downloaded binary
 		chmod +x ${MODPATH}/ksu_susfs_remote
 		if ${MODPATH}/ksu_susfs_remote > /dev/null 2>&1 ; then
@@ -150,7 +150,7 @@ fi
 ui_print "[-] Preparing susfs4ksu persistent directory"
 PERSISTENT_DIR=/data/adb/susfs4ksu
 [ ! -d /data/adb/susfs4ksu ] && mkdir -p $PERSISTENT_DIR
-files="sus_mount.txt try_umount.txt sus_path.txt sus_path_loop.txt sus_maps.txt sus_open_redirect.txt legit_mounts.txt sus_kstat_statically.json config.sh"
+files="sus_mount.txt try_umount.txt sus_path.txt sus_path_loop.txt sus_maps.txt sus_open_redirect.txt priority_uid_filter.txt sus_path_uid_filter.txt legit_mounts.txt sus_kstat_statically.json config.sh"
 for i in $files ; do
     if [ ! -f $PERSISTENT_DIR/$i ] ; then
         # If file doesn't exist, create it

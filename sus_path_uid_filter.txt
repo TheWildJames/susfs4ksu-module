@@ -1,0 +1,8 @@
+# this contains the app package names that are still allowed to see the
+# sus paths added from sus_path.txt / sus_path_loop.txt
+# requires susfs with the sus_path_uid_filter feature (kernel tree after v2.4.0)
+# and a ksu_susfs binary that supports 'set_sus_path_uid_filter'
+# it is set before the sus_path entries at boot-completed.sh
+# format: <package name> - one per line or comma separated
+# example
+# com.example.myapp

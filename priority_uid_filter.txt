@@ -1,0 +1,7 @@
+# this contains the app package names whose uids will be hidden from
+# getpriority/setpriority/ioprio_get/ioprio_set probing at boot-completed.sh
+# requires susfs v2.4.0+ (CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER)
+# format: <package name> - one per line or comma separated
+# example
+# com.example.tracker
+# com.example.detector

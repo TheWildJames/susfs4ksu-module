@@ -72,6 +72,10 @@ echo -e "# this contains suspicious paths you want \n# to be hidden at boot-comp
 echo -e "# this contains suspicious paths you want \n# to be hidden at boot-completed.sh\n# format: <path> <check max tries (seconds)>\n# example\n# /system/addon.d # by default max tries is disabled\n# /vendor/bin/install-recovery.sh 1 # try to check only once\n# /system/bin/install-recovery.sh 15 # try to check for 15 seconds" > "$config/sus_path_loop.txt"
 # Reset sus_maps.txt
 echo -e "# this contains suspicious paths that are in the maps you want \n# to be hidden at boot-completed.sh\n# example\n# /system/font/Roboto-Regular.ttf\n# /system/font/Roboto-Bold.ttf\n# /vendor/lib/libsuspicious.so" > "$config/sus_maps.txt"
+# Reset priority_uid_filter.txt
+echo -e "# this contains the app package names whose uids are hidden from\n# getpriority/setpriority/ioprio probing at boot-completed.sh (susfs v2.4.0+)\n# format: <package name> - one per line or comma separated\n# example\n# com.example.tracker\n# com.example.detector" > "$config/priority_uid_filter.txt"
+# Reset sus_path_uid_filter.txt
+echo -e "# this contains the app package names that are still allowed to see the\n# sus paths added by sus_path.txt / sus_path_loop.txt\n# needs susfs with the sus_path_uid_filter feature and a ksu_susfs binary that has it\n# format: <package name> - one per line or comma separated\n# example\n# com.example.myapp" > "$config/sus_path_uid_filter.txt"
 # Reset sus_mount.txt
 echo -e "# this contains suspicious mounts you want \n# to be sus_mounted at post-mount.sh\n# example\n# /system\n# /system_ext\n# /data/adb/modules\n# /debug_ramdisk" > "$config/sus_mount.txt"
 # Reset try_umount.txt
