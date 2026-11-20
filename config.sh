@@ -16,6 +16,7 @@ auto_try_umount=0
 skip_legit_mounts=0
 avc_log_spoofing=0
 emulate_vold_app_data=0
+priority_uid_filter_all_apps=0
 disable_webui_bin_update=1
 kernel_version='default'
 kernel_build='default'

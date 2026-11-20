@@ -389,24 +389,9 @@ echo sus_map=$(grep -ci 'sus_map' $logfile1 ) >> ${tmpfolder}/susfs_stats1.txt
 echo sus_mount=$(grep -ci 'sus_mount' $logfile1 ) >> ${tmpfolder}/susfs_stats1.txt
 echo try_umount=$(grep -ci 'try_umount' $logfile1 ) >> ${tmpfolder}/susfs_stats1.txt
 
-# priority_uid_filter (susfs v2.4.0+)
-# to add apps: echo "com.example.app" >> /data/adb/susfs4ksu/priority_uid_filter.txt
-if echo "$susfs_features" | grep -q "CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER"; then
-	priority_apps=$(susfs_join_app_list "$PERSISTENT_DIR/priority_uid_filter.txt")
-	[ -n "$priority_apps" ] && {
-		${SUSFS_BIN} set_priority_uid_filter "$priority_apps" && echo "[priority_uid_filter]: susfs4ksu/boot-completed $priority_apps" >> $logfile1
-	}
-fi
-
-# sus_path_uid_filter (susfs after v2.4.0, no CONFIG_* string, probe the binary)
-# to add apps: echo "com.example.app" >> /data/adb/susfs4ksu/sus_path_uid_filter.txt
-# must be set before the sus_path entries below so the allowed uids exist
-if susfs_have_cmd set_sus_path_uid_filter; then
-	uid_filter_apps=$(susfs_join_app_list "$PERSISTENT_DIR/sus_path_uid_filter.txt")
-	[ -n "$uid_filter_apps" ] && {
-		${SUSFS_BIN} set_sus_path_uid_filter "$uid_filter_apps" && echo "[sus_path_uid_filter]: susfs4ksu/boot-completed $uid_filter_apps" >> $logfile1
-	}
-fi
+# priority_uid_filter + sus_path_uid_filter
+# shared with the WebUI so a toggle or a list change applies the same way
+[ -f "${MODDIR}/apply_uid_filters.sh" ] && sh "${MODDIR}/apply_uid_filters.sh"
 
 # to add paths: echo "/system/addon.d" >> /data/adb/susfs4ksu/sus_path.txt
 {

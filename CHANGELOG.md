@@ -12,6 +12,8 @@
 * WebUI: custom feature editor entries may declare an `applyCmd`; the save action then applies the change immediately instead of only asking for a reboot
 * Bundled `ksu_susfs` rebuilt from `TheWildJames/susfs4ksu-binaries@universal-binary`, which adds `set_sus_path_uid_filter` on top of upstream's `priority_uid_filter`, so both features are usable out of the box
     * the binary update/check paths (`customize.sh`, `action.sh`, `susfs-bin-check.sh`, `susfs-bin-update.sh`) now pull from that fork instead of `sidex15/susfs4ksu-binaries`
+* New toggle "Hide All App UIDs" (below Emulate Vold App Data Isolation): feeds every installed app with uid >= 10000 from `/data/system/packages.list` into `priority_uid_filter`, unioned with the manual list, so uids you never listed are hidden from getpriority/setpriority/ioprio probing too
+    * both filters now live in `apply_uid_filters.sh`, called from `boot-completed.sh` and from the WebUI, so a toggle takes effect without a reboot
 
 ## v1.5.2+ Revision 28
 ### Notes
