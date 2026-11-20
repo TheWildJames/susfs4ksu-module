@@ -99,7 +99,7 @@ export async function custom_toggles(settings, susfs_versions, susfs_features = 
 			};
 			setupBooleanToggle(priority_uid_filter_all_apps, custom_settings, "priority_uid_filter_all_apps", `${config}/config.sh`, {
 				onMessage: "All app uids hidden from priority probing",
-				offMessage: "Back to the manual list (reboot clears a filter with no apps)",
+				offMessage: "Back to the manual list, filter cleared if it is empty",
 				onAction: apply_uid_filters,
 				offAction: apply_uid_filters,
 			});
