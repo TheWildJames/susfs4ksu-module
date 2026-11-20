@@ -32,7 +32,12 @@ if echo "$susfs_features" | grep -q "CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER"; then
 		${SUSFS_BIN} set_priority_uid_filter "$priority_apps" \
 			&& echo "[priority_uid_filter]: susfs4ksu/apply_uid_filters $(echo "$priority_apps" | awk -F, '{print NF" apps"}')" >> $logfile1
 	else
-		echo "[priority_uid_filter]: no apps to add, filter unchanged (reboot clears it)" >> $logfile1
+		# The kernel has no "clear" opcode and rejects an empty string, but it
+		# skips package names it cannot resolve and publishes the resulting
+		# (empty) bitmap - so one uninstallable name clears the filter live
+		# instead of waiting for a reboot.
+		${SUSFS_BIN} set_priority_uid_filter "susfs.clear.filter" \
+			&& echo "[priority_uid_filter]: cleared, no apps configured" >> $logfile1
 	fi
 fi
 

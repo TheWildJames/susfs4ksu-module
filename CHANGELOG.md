@@ -14,6 +14,7 @@
     * the binary update/check paths (`customize.sh`, `action.sh`, `susfs-bin-check.sh`, `susfs-bin-update.sh`) now pull from that fork instead of `sidex15/susfs4ksu-binaries`
 * New toggle "Hide All App UIDs" (below Emulate Vold App Data Isolation): feeds every installed app with uid >= 10000 from `/data/system/packages.list` into `priority_uid_filter`, unioned with the manual list, so uids you never listed are hidden from getpriority/setpriority/ioprio probing too
     * both filters now live in `apply_uid_filters.sh`, called from `boot-completed.sh` and from the WebUI, so a toggle takes effect without a reboot
+    * turning it off (or emptying the list) clears the kernel filter immediately: an uninstallable placeholder name is sent, which the kernel skips, publishing an empty bitmap - no reboot needed
 
 ## v1.5.2+ Revision 28
 ### Notes
