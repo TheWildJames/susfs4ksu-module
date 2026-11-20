@@ -122,7 +122,7 @@ H.on('NAVIGATE_END', async ({ to, from, trigger, location }) => {
 		if (versionAtLeast(susfs_versions, 1, 5, 4)) auto_hide_settings(settings, susfs_features, susfs_versions);
 		sus_su_toggle(settings, susfs_versions);
 	} else if (currentPath === '/custom.html') {
-		custom_toggles(settings, susfs_versions);
+		custom_toggles(settings, susfs_versions, susfs_features);
 		custom_rom_settings(settings);
 		custom_feature_editor(susfs_features, susfs_versions);
 		custom_kstat_editor();

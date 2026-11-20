@@ -1,8 +1,8 @@
 import { run, versionAtLeast, setupBooleanToggle } from '../../utils.js';
-import { config, susfs_bin } from '../../core/constants.js';
+import { config, susfs_bin, moddir } from '../../core/constants.js';
 
 // Custom toggles
-export async function custom_toggles(settings, susfs_versions) {
+export async function custom_toggles(settings, susfs_versions, susfs_features = []) {
 	const custom_settings = settings;
 	const emulate_vold_app_data_sus_path_loop_checkbox = document.getElementById("emulate_vold_app_data_sus_path_loop_checkbox");
 	const emulate_vold_app_data_sus_path_loop = document.getElementById("emulate_vold_app_data_sus_path_loop");
@@ -76,5 +76,33 @@ export async function custom_toggles(settings, susfs_versions) {
 			onAction: () => run(`${susfs_bin} enable_avc_log_spoofing 1`),
 			offAction: () => run(`${susfs_bin} enable_avc_log_spoofing 0`),
 		});
+	}
+
+	// Hide every installed app uid from getpriority/ioprio probing (susfs v2.4.0+).
+	// "All apps" mode feeds /data/system/packages.list (uid >= 10000) into the same
+	// filter as the manual list, in one call, so nothing has to be listed by hand.
+	const priority_uid_filter_all_apps = document.getElementById("priority_uid_filter_all_apps");
+	const priority_uid_filter_all_apps_group = document.getElementById("priority_uid_filter_all_apps_group");
+	if (priority_uid_filter_all_apps && priority_uid_filter_all_apps_group) {
+		if (!susfs_features.includes("CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER")) {
+			priority_uid_filter_all_apps.checked = false;
+			priority_uid_filter_all_apps.disabled = true;
+			priority_uid_filter_all_apps_group.classList.add("opacity-40");
+		} else {
+			priority_uid_filter_all_apps.checked = custom_settings.priority_uid_filter_all_apps === 1 ? "checked" : false;
+			const apply_uid_filters = async () => {
+				try {
+					await run(`sh ${moddir}/apply_uid_filters.sh`);
+				} catch (error) {
+					console.error("Applying the uid filters failed:", error);
+				}
+			};
+			setupBooleanToggle(priority_uid_filter_all_apps, custom_settings, "priority_uid_filter_all_apps", `${config}/config.sh`, {
+				onMessage: "All app uids hidden from priority probing",
+				offMessage: "Back to the manual list (reboot clears a filter with no apps)",
+				onAction: apply_uid_filters,
+				offAction: apply_uid_filters,
+			});
+		}
 	}
 }
