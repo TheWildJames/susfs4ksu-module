@@ -17,20 +17,22 @@ priority_uid_filter_all_apps=0
 
 susfs_features=$(${SUSFS_BIN} show enabled_features)
 
-## priority_uid_filter: the manual list, plus every installed app uid when the
-## all-apps toggle is on (the kernel replaces the whole filter per call, so the
-## two sources have to go out as one list).
+## priority_uid_filter: exactly one source at a time.
+##  - all-apps toggle on : every installed app with uid >= 10000, the list is ignored
+##  - toggle off         : only the manual list in priority_uid_filter.txt
+## The kernel replaces the whole filter per call, so only one list ever goes out.
 if echo "$susfs_features" | grep -q "CONFIG_KSU_SUSFS_PRIORITY_UID_FILTER"; then
-	priority_apps=$(susfs_join_app_list "$PERSISTENT_DIR/priority_uid_filter.txt")
-
 	if [ "$priority_uid_filter_all_apps" = 1 ] && [ -f /data/system/packages.list ]; then
-		all_apps=$(awk '$2 >= 10000 { pkg = pkg (pkg ? "," : "") $1 } END { print pkg }' /data/system/packages.list)
-		priority_apps=$(susfs_merge_app_lists "$priority_apps" "$all_apps")
+		priority_apps=$(awk '$2 >= 10000 { pkg = pkg (pkg ? "," : "") $1 } END { print pkg }' /data/system/packages.list)
+		priority_source="all installed apps"
+	else
+		priority_apps=$(susfs_join_app_list "$PERSISTENT_DIR/priority_uid_filter.txt")
+		priority_source="manual list"
 	fi
 
 	if [ -n "$priority_apps" ]; then
 		${SUSFS_BIN} set_priority_uid_filter "$priority_apps" \
-			&& echo "[priority_uid_filter]: susfs4ksu/apply_uid_filters $(echo "$priority_apps" | awk -F, '{print NF" apps"}')" >> $logfile1
+			&& echo "[priority_uid_filter]: susfs4ksu/apply_uid_filters $priority_source, $(echo "$priority_apps" | awk -F, '{print NF" apps"}')" >> $logfile1
 	else
 		# The kernel has no "clear" opcode and rejects an empty string, but it
 		# skips package names it cannot resolve and publishes the resulting

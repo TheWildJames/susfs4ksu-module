@@ -84,10 +84,3 @@ susfs_join_app_list() {
 	grep -v "#" "$1" | tr -d ' 	\r' | grep -v '^$' | tr '\n' ',' | sed 's/,*$//'
 }
 
-## susfs_merge_app_lists <comma_list> <comma_list>
-## Unions two comma separated app lists, dropping empties and duplicates
-## (a duplicate would only waste space in the SUSFS_APP_STR_BUF_SIZE buffer).
-susfs_merge_app_lists() {
-	printf '%s\n%s\n' "$1" "$2" | tr ',' '\n' | tr -d ' 	\r' \
-		| awk 'NF && !seen[$0]++ { printf "%s%s", (n++ ? "," : ""), $0 }'
-}
